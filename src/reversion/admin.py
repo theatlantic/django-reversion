@@ -56,11 +56,13 @@ class VersionAdmin(admin.ModelAdmin):
     
     def _autoregister(self, model, follow=None):
         """Registers a model with reversion, if required."""
-        if model._meta.proxy:
-            raise RegistrationError("Proxy models cannot be used with django-reversion, register the parent class instead")
+        # if model._meta.proxy:
+        #     raise RegistrationError("Proxy models cannot be used with django-reversion, register the parent class instead")
         if not self.revision_manager.is_registered(model):
             follow = follow or []
             for parent_cls, field in model._meta.parents.items():
+                if field is None:
+                    continue
                 follow.append(field.name)
                 self._autoregister(parent_cls)
             self.revision_manager.register(model, follow=follow, format=self.reversion_format)
@@ -365,7 +367,7 @@ class VersionAdmin(admin.ModelAdmin):
                         "ordered_objects": opts.get_ordered_objects(),
                         "form_url": mark_safe(request.path),
                         "opts": opts,
-                        "content_type_id": ContentType.objects.get_for_model(self.model).id,
+                        "content_type_id": ContentType.objects.get_for_model(self.model, False).id,
                         "save_as": False,
                         "save_on_top": self.save_on_top,
                         "changelist_url": reverse("%s:%s_%s_changelist" % (self.admin_site.name, opts.app_label, opts.module_name)),
@@ -448,7 +450,7 @@ class VersionMetaAdmin(VersionAdmin):
         
     def queryset(self, request):
         """Returns the annotated queryset."""
-        content_type = ContentType.objects.get_for_model(self.model)
+        content_type = ContentType.objects.get_for_model(self.model, False)
         pk = self.model._meta.pk
         if has_int_pk(self.model):
             version_table_field = "object_id_int"

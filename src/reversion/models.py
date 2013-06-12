@@ -182,7 +182,7 @@ class Version(models.Model):
             result.update(object_version.m2m_data)
             # Add parent data.
             for parent_class, field in obj._meta.parents.items():
-                content_type = ContentType.objects.get_for_model(parent_class)
+                content_type = ContentType.objects.get_for_model(parent_class, False)
                 if field:
                     parent_id = force_text(getattr(obj, field.attname))
                 else:
